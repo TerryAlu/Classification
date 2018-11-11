@@ -3,13 +3,15 @@ from scipy import stats
 
 vflag = True
 HEADER = '\033[94m'
+OKGREEN = '\033[92m'
 ENDC = '\033[0m'
 
-def verbose(title, msg):
+def verbose(title, msg=None):
     if not vflag:
         return
     print "%s>>  %s  <<%s" % (HEADER, title, ENDC)
-    print msg
+    if msg is not None:
+        print msg
     print ""
 
 class Target():
@@ -67,18 +69,18 @@ class DataGenerator():
         self.linear = linear
 
         # number of constraint = number of features = nnumeric
-        self.constraints = [self.gen_constraint(t1) for _ in xrange(nnumeric)]
+        self.constraints = [self.gen_constraint(self.t1) for _ in xrange(nnumeric)]
 
         # generate features
         self.t1data = [self.gen_feature(self.t1, constraint) for constraint in self.constraints]
         self.t1data = np.hstack(self.t1data)
-        verbose("%s Features" % self.t1, self.t1data)
+        # verbose("%s Features" % self.t1, self.t1data)
         self.t2data = [self.gen_feature(self.t2, constraint) for constraint in self.constraints]
         self.t2data = np.hstack(self.t2data)
-        verbose("%s Features" % self.t2, self.t2data)
+        # verbose("%s Features" % self.t2, self.t2data)
 
-        # pvalues
-        self.pvalues = self.get_pvalues()
+        # tvalues & pvalues
+        self.tvalues, self.pvalues = self.ttest()
 
     def gen_constraint(self, target):
         # 0~1000
@@ -90,8 +92,8 @@ class DataGenerator():
         # verbose("Feature Coff. (0~100)", coff)
 
         if not self.linear:
-            # power of characteristic (1~3)
-            char_power = np.random.randint(1, 4, target.char_len)
+            # power of characteristic (2~5)
+            char_power = np.random.randint(2, 5, target.char_len)
         else:
             char_power = np.ones(target.char_len)
 
@@ -120,7 +122,7 @@ class DataGenerator():
 
         # verbose("Interception", interception)
         # verbose("Coff.", coff)
-        verbose("Chpow.", chpow)
+        # verbose("Chpow.", chpow)
 
         # [char^power]
         power_chars = np.power(target.char_list, chpow)
@@ -139,55 +141,37 @@ class DataGenerator():
 
         return res
 
-    def get_pvalues(self):
-        ncol = self.t1.char_len
+    def ttest(self):
         pvalues = []
-        for i in xrange(ncol):
+        tvalues = []
+        for i in xrange(self.nnumeric):
             t1col = self.t1data[...,i]
             t2col = self.t2data[...,i]
             t, p = stats.ttest_ind(t1col,t2col)
+            tvalues.append(t)
             pvalues.append(p)
 
-        verbose("Pvalues", np.array(pvalues))
+        # verbose("Tvalues", np.array(tvalues))
+        # verbose("Pvalues", np.array(pvalues))
 
-        return np.array(pvalues)
+        return np.array(tvalues), np.array(pvalues)
 
-    def save(self, path, shuffle=True, csv=False):
+    def save(self, path):
         """
         Write data of two targets to file.
-        If shuffle = True, then data of two targets will be mixed and shuffled before written to the file.
-        Otherwise, t1 data will be written to file and followed by t2 data.
         """
-        with open(path, "w") as fp:
-            # write title to file
-            title = ["ch"+str(x+1)for x in xrange(self.t1.char_len)]
-            title.insert(0, "id")
-            fp.write(",".join(title))
-            fp.write("\n")
-
-            # mix t1 & t2 data
-            data = np.vstack([self.t1data, self.t2data])
-            if shuffle:
-                np.random.shuffle(data)
-            
-            # FIXME: This function takes too much time...
-            if csv:
-                for i in xrange(len(data)):
-                    # write first column (id)
-                    fp.write(str(i+1)+",")
-                    # write others columns (characteristic)
-                    data_str = data.astype(str)
-                    fp.write(",".join(data_str[i]))
-                    fp.write("\n")
-            else:
-                np.save(path, data)
+        # mix t1 & t2 data
+        np.savez(path, t1=self.t1data, t2=self.t2data)
         
 
 if __name__ == "__main__":
 
     # XXX: Modify t1 & t2 characteristic parameter to conduct experiment
-    t1 = Target("Target1", [(50,30), (100,50)], 10000)
-    t2 = Target("Target2", [(45,20), (110,30)], 10000)
-    dg = DataGenerator((t1, t2), 2, True)
+    # t1 = Target("Target1", [(50,30), (100,50)], 10000)
+    # t2 = Target("Target2", [(45,20), (110,30)], 10000)
 
-    # dg.save("data.npy")
+    t1 = Target("Target1", [(150,20), (100,10)], 100000)
+    t2 = Target("Target2", [(145,20), (110,10)], 100000)
+
+    dg = DataGenerator((t1, t2), 2, True)
+    dg.save("data")
