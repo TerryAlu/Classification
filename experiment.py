@@ -39,12 +39,12 @@ cm = gen_cm_from_npz("data", "DT")
 verbose("Confusion Matrix", cm)
 
 print "Experiment1: Verify relationship between t-values & TP rate"
-ttp100_150 = check_ttp(100, 150, 2, 20, "DT", "data_dt100", linear=True)
-ttp250_300 = check_ttp(250, 300, 1, 20, "DT", "data_dt250", linear=True)
-verbose("TTP 100~150", ttp100_150)
-print csv_string(ttp100_150)
-verbose("TTP 250~300", ttp250_300)
-print csv_string(ttp250_300)
+# ttp100_150 = check_ttp(100, 150, 2, 20, "DT", "data_dt100", linear=True)
+# ttp250_300 = check_ttp(250, 300, 1, 20, "DT", "data_dt250", linear=True)
+# verbose("TTP 100~150", ttp100_150)
+# print csv_string(ttp100_150)
+# verbose("TTP 250~300", ttp250_300)
+# print csv_string(ttp250_300)
 
 print "Experiment2: Linear & Non-Linaer for DT"
 ttp100_150_l = check_ttp(100, 150, 2, 20, "DT", "data_dt100_L", linear=True)
